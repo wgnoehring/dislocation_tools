@@ -194,10 +194,12 @@ def main():
 
     if file_format == 'dump':
         if append_displacements:
-            atomdata = np.append(atomdata, np.zeros((atomdata.shape[0], 3), dtype=float), 1)
+            atomdata = np.append(
+                atomdata, np.zeros((atomdata.shape[0], 3), dtype=float), 1
+            )
             header[-1].append('ux uy uz')
             # Calculate the total displacements
-            atomdata[:, 5:8] = reference_coordinates - coordinates
+            atomdata[:, -3::] = reference_coordinates - coordinates
         write_dump(outfile, header, atomdata)
     elif file_format == 'data':
         write_data(outfile, boundary_style, infile, coordinates)
@@ -584,7 +586,14 @@ def write_dump(outfile, header, atomdata):
         else:
             for line in header:
                 file.write(bytes(' '.join(line) + '\n'))
-    fmt = ["%d", "%d"] + ["%.14e"] * (atomdata.shape[1] - 2)
+    # Define the number format in the "ATOMS" section
+    fmt = []
+    integer_columns = ['id', 'type', 'ix', 'iy', 'iz']
+    for column in header[-1][2:]:
+        if column in integer_columns:
+            fmt.append('%d')
+        else:
+            fmt.append('%.14e')
     with open(outfile, 'ab') as file:
         np.savetxt(file, atomdata, fmt=fmt)
 
