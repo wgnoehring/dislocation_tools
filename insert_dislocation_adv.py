@@ -413,22 +413,25 @@ def calc_image_distances(img_chunk, periodic_boundary, box_size):
     with LAMMPS_SMALLBIG
     """
     # Bit mask values for decoding Lammps image flags:
-    imgmask = 1023
-    imgmax = 512
-    img2bits = 20
+    imgmask = np.array(1023, dtype=img_chunk.dtype)
+    imgmax = np.array(512, dtype=img_chunk.dtype)
+    img2bits = np.array(20, dtype=img_chunk.dtype)
     image_distances = [None] * 3
     if periodic_boundary[0]:
         image_distances[0]  = np.bitwise_and(img_chunk, imgmask)
         image_distances[0] -= imgmax
+        image_distances[0]  = image_distances[0].astype(float)
         image_distances[0] *= box_size[0]
     if periodic_boundary[1]:
-        image_distances[1]  = np.right_shift(img_chunk, img2bits)
+        image_distances[1]  = np.right_shift(img_chunk, imgbits)
         image_distances[1] &= imgmask
         image_distances[1] -= imgmax
+        image_distances[1]  = image_distances[1].astype(float)
         image_distances[1] *= box_size[1]
     if periodic_boundary[2]:
         image_distances[2]  = np.right_shift(img_chunk, img2bits)
         image_distances[2] -= imgmax
+        image_distances[2]  = image_distances[2].astype(float)
         image_distances[2] *= box_size[2]
     return image_distances
 
