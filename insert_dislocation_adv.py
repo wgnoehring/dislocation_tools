@@ -89,6 +89,11 @@ import configparser
 import numpy as np
 from scipy import isclose
 
+__author__ = "Wolfram Georg Nöhring"
+__copyright__ = "Copyright 2015, EPFL"
+__license__ = "GNU General Public License"
+__email__ = "wolfram.nohring@epfl.ch"
+
 def main():
     # Parse coordinate system, elastic constants, and files
     configfile = sys.argv[1]
