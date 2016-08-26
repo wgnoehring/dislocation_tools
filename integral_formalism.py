@@ -1,88 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Insert dislocations into an anisotropic medium.
-insert_dislocation_adv.py configfile
-
-Read atom coordinates from a Lammps file and insert one or more dislocations by
-applying their  anisotropic-elastic displacement  field. Displacements  are are
-calculated  with  Stroh's advanced  straight  dislocation  formalism, see  [1].
-Variables of the elastic problem are given similar names as in the book.
-
-Parameters
-----------
-configfile (str): configuration file in the format of python-configparser.
-    The file contains three mandatory sections:
-    [simulation cell]
-        x, y, z (ndarray): The orientation of  the crystal relative to the x, y
-            and z directions of the simulation  cell The vectors do not need to
-            be  normalized.  For each  vector,  the  three components  must  be
-            written as three floating point numbers on the same line, separated
-            by whitespace.
-        boundary_style (str): Boundary  style as used by  the Lammps 'boundary'
-            command, e.g. 's s p'.
-    [elastic  constants]
-        c11, c12, c44  (float): cubic elastic stiffnesses. These  should be the
-            components  relative to  the  [100]-[010]-[001] CRYSTAL  coordinate
-            system; NOT relative  to the simulation cell.  The program performs
-            all the required tensor rotations!
-
-    [files]
-        format (str): 'dump' or 'data'
-        input, output (str): paths to the input and output files.
-        append_displacements (bool):  if True,  the displacement field  will be
-            appended to the output file (as the last three columns). 'ux uy uz'
-            will be appended to the ITEM:ATOMS header line.
-
-    The mandatory sections are followed by an arbitrary number of sections with
-    the name [dislocationX], where X is an integer. Each [dislocationX] section
-    defines  a  dislocation. If  there  are  several  such sections,  then  the
-    integers X decide in which sequence the displacement fields will be applied
-    (ascending order, i.e. dislocation1 would be inserted before dislocation2).
-    Parameters in a dislocation-section:
-        b (ndarray): Burgers vector (distance units)
-        xi (ndarray): Line direction, does not need to be normalized
-        center (ndarray): Center in simulation cell coordinates
-        m (ndarray,  optional): first  direction in the  dislocation coordinate
-            system, expressed  in crystal coordinates. This  vector is parallel
-            to the  normal of the  plane along which the  cut would be  made to
-            insert the dislocation.
-
-
-    Example file:
-        [simulation cell]
-        x =  1 -2  1
-        y = -1 -1 -1
-        z =  1  0 -1
-        boundary_style = s s p
-        [elastic constants]
-        c11 = 170.221549146026319
-        c12 = 122.600531649638015
-        c44 = 75.848200859164038
-        [files]
-        format = dump
-        input  = Cu_parallelepiped.atom
-        output = Cu_parallelepiped_with_screw_dislocation.atom
-        append_displacements = True
-        [dislocation1]
-        b   =  -1.807500856188893   0.000000000000000   1.807500856188893
-        xi  =  -1 0 1
-        m   =   1 2 1
-        center = 125.444552873685 88.702693999897 0.0
-
-Notes
------
-Currently, Lammps  dump and  data files  are supported.  Input dump  files must
-contain the columns 'id',  'type', 'x', 'y', and 'z', in  this order. They must
-contain a single snapshot. Data files  are currently read and written using the
-Lammps Python API, i.e. Lammps is actually called.
-
-Todo: a data file  parser which does not rely on  Lammps should be implemented.
-The file reading / writing functionality should be outsourced into a module.
-
+"""
 References
 ----------
-[1]  Hirth, J. P.; Lothe, J. Theory of Dislocations, 2nd Edition;
+[1] Hirth, J. P.; Lothe, J. Theory of Dislocations, 2nd Edition;
     John Wiley and Sons, 1982. pp 467
+[2] Bacon, D. J.; Barnett, D. M.; Scattergood, R. O.
+    Prog. Mater. Sci. 1979, 23, 51–262.
 """
 
 import sys
@@ -90,10 +14,19 @@ import configparser
 import numpy as np
 from scipy import isclose
 
+# new dependencies
+from sympy.matrices import Matrix
+from sympy import Symbol
+import sympy as sp
+from sympy.utilities.autowrap import ufuncify
+from scipy.integrate import quad
+
 __author__ = "Wolfram Georg Nöhring"
 __copyright__ = "Copyright 2015, EPFL"
 __license__ = "GNU General Public License"
 __email__ = "wolfram.nohring@epfl.ch"
+
+# Todo: change floats to sympy floats
 
 def main():
     # Parse coordinate system, elastic constants, and files
@@ -139,7 +72,7 @@ def main():
     list_of_dislocations.sort(key =lambda x: x[0])
     list_of_dislocations = [sublist[1] for sublist in list_of_dislocations]
 
-    # Define the elastic constants
+    # Define elastic constants
     c_voigt = np.zeros((6, 6), dtype=float)
     c_voigt[0:3, 0:3] = c12
     for i in range(0, 3):
@@ -156,8 +89,6 @@ def main():
     c = np.einsum('ig,jh,ghmn,km,ln',
         r_crys_lab, r_crys_lab, c, r_crys_lab, r_crys_lab)
 
-    if append_displacements:
-        reference_coordinates = np.copy(coordinates)
     for dislocation in list_of_dislocations:
         b  = np.array(dislocation['b'].split(), dtype=float)
         xi = np.array(dislocation['xi'].split(), dtype=float)
@@ -190,14 +121,101 @@ def main():
         r[2,:] = xi
         assert(isclose(np.linalg.det(r), 1.0))
 
-        # Solve the sextic equations and apply displacements
-        (Np, Nv) = solve_sextic_equations(m, n, c)
+        # Solve the integral problem
+        print("Constructing angular function matrices")
+        nn, mm, nm, mn, nninv = construct_symbolic_angular_functions(xi, m, n, c)
+        nn_numerical = ufuncify_angular_function(nn)
+        mm_numerical = ufuncify_angular_function(mm)
+        nm_numerical = ufuncify_angular_function(nm)
+        mn_numerical = ufuncify_angular_function(mn)
+        nninv_numerical = ufuncify_angular_function(nninv)
 
+        # calculate the matrices S and B
+        print("calculating S and B")
+        # construct the integrands
+        S_integrand = Matrix(np.tensordot(nninv, nm, axes=([1], [0])))
+        B_integrand = np.tensordot(nninv, nm, axes=([1], [0]))
+        B_integrand = mm - Matrix(np.tensordot(mn, B_integrand, axes=([1], [0])))
+        S_integrand = ufuncify_angular_function(S_integrand)
+        B_integrand = ufuncify_angular_function(B_integrand)
+        # integrate; exploit the fact that the integrands have period w
+        S = np.zeros((3, 3), dtype=float)
+        B = np.zeros((3, 3), dtype=float)
+        for i in range(3):
+            for j in range(3):
+                S_val_half, S_err = quad(S_integrand[i, j], 0.0, np.pi)
+                S[i, j] = S_val_half * 2.0
+                B_val_half, B_err = quad(B_integrand[i, j], 0.0, np.pi)
+                B[i, j] = B_val_half * 2.0
+                print(
+                    "S[{:d}, {:d}]/2.0, error: {:16.8f} {:16.8f}".format(
+                            i, j, S_val_half, S_err
+                    )
+                )
+                print(
+                    "B[{:d}, {:d}]/2.0, error: {:16.8f} {:16.8f}".format(
+                            i, j, B_val_half, S_err
+                    )
+                )
+        S /= (-2.0 * np.pi)
+        B /= (8.0 * np.pi**2.0)
+        # For debugging: check S and B by computing them from Stroh's solution
+        if False:
+            Np, Nv = solve_sextic_equations(m, n, c)
+            signs = np.sign(np.imag(Np))
+            signs[np.where(signs==0.0)] = 1.0
+            A = Nv[0:3, :]
+            L = Nv[3:6, :]
+            S_check = np.zeros((3, 3), dtype=complex)
+            for k in range(3):
+                for s in range(3):
+                    for alpha in range(6):
+                        S_check[k, s] += (
+                            1j * A[k, alpha] * L[s, alpha] * signs[alpha]
+                        )
+            assert(isclose(S-S_check, 0.0).all())
+            B_check = np.zeros((3, 3), dtype=complex)
+            for k in range(3):
+                for s in range(3):
+                    for alpha in range(6):
+                        B_check[k, s] += (
+                            L[k, alpha] * L[s, alpha] * signs[alpha]
+                        )
+            B_check /= (-4.0 * np.pi * 1j)
+            assert(isclose(B-B_check, 0.0).all())
+
+        # Calculate the displacements
+        print("calculating atomic displacements")
         coordinates -= center
-        coordinates += calculate_displacements(coordinates, b, m, n, Np, Nv)
+        # Calculate radii and angles
+        radii = np.linalg.norm(coordinates, axis=1)
+        tmp_x = coordinates[:, 0] / radii
+        tmp_y = coordinates[:, 1] / radii
+        angles = np.arctan2(tmp_y, tmp_x)
+        displacements = np.zeros_like(coordinates)
+        for atom_index in range(displacements.shape[0]):
+            # Calculate the integrals
+            nninv_integral = np.zeros((3, 3), dtype=float)
+            Slike_integral = np.zeros((3, 3), dtype=float)
+            for i in range(3):
+                for j in range(3):
+                    nninv_integral[i, j], integration_error = quad(
+                        nninv_numerical[i, j], 0.0, angles[atom_index]
+                    )
+                    Slike_integral[i, j], integration_error = quad(
+                        S_integrand[i, j], 0.0, angles[atom_index]
+                    )
+            matrix_1 = -1.0 * S * np.log(radii[atom_index])
+            matrix_2 = 4.0 * np.pi * np.einsum('ks,ik', B, nninv_integral)
+            matrix_3 = np.einsum('rs,ir', S, Slike_integral)
+            matrix_4 = (matrix_1 + matrix_2 + matrix_3)
+            displacements[atom_index] = np.einsum(
+                's,is', b, matrix_4) / (2.0 * np.pi
+            )
+        coordinates += displacements
         coordinates += center
 
-
+    # Write output file
     if file_format == 'dump':
         if append_displacements:
             atomdata = np.append(
@@ -209,6 +227,73 @@ def main():
         write_dump(outfile, header, atomdata)
     elif file_format == 'data':
         write_data(outfile, boundary_style, infile, coordinates)
+
+def construct_symbolic_angular_functions(xi, m, n, c):
+    """Give nn, mm, nm and mn as symbolic functions of the rotation angle
+    """
+    # Generate symbolic expressions for (nn) and (nm)
+    angle_symbol = Symbol("w")
+    xi_symbol = Matrix(xi)
+    rotation_matrix = construct_rotation_matrix(xi_symbol, angle_symbol)
+    n_rot = rotation_matrix * n
+    m_rot = rotation_matrix * m
+    # It would perhaps be useful to simplify the expressions,
+    # e.g. via trigsimp. Currently, however, this introduces
+    # numerical error.
+    #nn = sp.trigsimp(ab_contraction_symbolic(n_rot, n_rot, c))
+    #mm = sp.trigsimp(ab_contraction_symbolic(m_rot, m_rot, c))
+    #nm = sp.trigsimp(ab_contraction_symbolic(n_rot, m_rot, c))
+    #mn = sp.trigsimp(ab_contraction_symbolic(m_rot, n_rot, c))
+    nn = ab_contraction_symbolic(n_rot, n_rot, c)
+    mm = ab_contraction_symbolic(m_rot, m_rot, c)
+    nm = ab_contraction_symbolic(n_rot, m_rot, c)
+    mn = ab_contraction_symbolic(m_rot, n_rot, c)
+    # inv() and inverge_GE() seem to suffer from a loss of precision; don't use
+    nninv = nn.inverse_LU()
+    return (nn, mm, nm, mn, nninv)
+
+def ufuncify_angular_function(symbolic_function_matrix):
+    angle_symbol = Symbol("w")
+    numerical_function_matrix = np.empty((3, 3), dtype=object)
+    for i in range(3):
+        for j in range(3):
+            numerical_function_matrix[i, j] = ufuncify(
+                [angle_symbol], symbolic_function_matrix[i, j]
+            )
+    return numerical_function_matrix
+
+def construct_rotation_matrix(axis, angle):
+    """construct a rotation about an axis by an angle
+    """
+    tensor_product = sp.eye(3)
+    for i in range(3):
+        for j in range(3):
+            tensor_product[i, j] = axis[i] * axis[j]
+    cross_product_matrix = sp.zeros(3)
+    cross_product_matrix[0, 1] = -1.0 * axis[2]
+    cross_product_matrix[1, 0] = axis[2]
+    cross_product_matrix[0, 2] = axis[1]
+    cross_product_matrix[2, 0] = -1.0 * axis[1]
+    cross_product_matrix[1, 2] = -1.0 * axis[0]
+    cross_product_matrix[2, 1] = axis[0]
+    rotation_matrix = (
+        sp.cos(angle) * sp.eye(3) +
+        sp.sin(angle) * cross_product_matrix +
+        (1.0 - sp.cos(angle)) * tensor_product
+    )
+    return rotation_matrix
+
+def ab_contraction_symbolic(a, b, t):
+    """ Return a contraction of the fourth order tensor t and the
+        vectors a and b, see equation 13-162 in Hirth & Lothe's book.
+    In component notation: (ab)_ij = a_i*c_ijkl*b_l.
+    This function performs the contraction symbolically.
+    """
+    contraction_1 = np.tensordot(t, b, axes=([3],[0]))
+    contraction_2 = np.tensordot(a, contraction_1, axes=([0],[0]))
+    contraction_2 = contraction_2[0, :, :, 0]
+    contraction_2 = Matrix(contraction_2)
+    return contraction_2
 
 def get_m_direction(xi):
     """ Find two directions which are perpendicular to the line direction.
@@ -498,6 +583,8 @@ def read_data(infile, boundary_style):
     my_lammps.command('atom_style atomic')
     my_lammps.command('units metal')
     my_lammps.command('boundary ' + boundary_style)
+    my_lammps.command('atom_modify map array')
+    my_lammps.command('atom_modify sort 0 0.0')
     my_lammps.command('read_data ' + infile)
     coordinates = np.asarray(my_lammps.gather_atoms("x", 1, 3))
     image_flags = np.asarray(my_lammps.gather_atoms("image", 0, 1))
