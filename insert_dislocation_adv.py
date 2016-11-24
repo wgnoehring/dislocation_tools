@@ -116,10 +116,11 @@ __copyright__ = "Copyright 2015, EPFL"
 __license__ = "GNU General Public License"
 __email__ = "wolfram.nohring@epfl.ch"
 
-
-def main():
+# Allow passing in path to configuration file, so that module can be
+# called from other modules. Todo: split up functionality.
+def main(configfile=sys.argv[1]):
     # Parse coordinate system, elastic constants, and files
-    configfile = sys.argv[1]
+    #configfile = sys.argv[1]
     config = configparser.ConfigParser()
     config.read(configfile)
     x = np.array(config.get('simulation cell', 'x').split(), dtype=float)
