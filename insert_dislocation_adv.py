@@ -116,11 +116,9 @@ __copyright__ = "Copyright 2015, EPFL"
 __license__ = "GNU General Public License"
 __email__ = "wolfram.nohring@epfl.ch"
 
-# Allow passing in path to configuration file, so that module can be
-# called from other modules. Todo: split up functionality.
-def main(configfile=sys.argv[1]):
+def main():
     # Parse coordinate system, elastic constants, and files
-    #configfile = sys.argv[1]
+    configfile = sys.argv[1]
     config = configparser.ConfigParser()
     config.read(configfile)
     x = np.array(config.get('simulation cell', 'x').split(), dtype=float)
@@ -170,7 +168,7 @@ def main(configfile=sys.argv[1]):
     for dislocation in list_of_dislocations:
         try:
             solution_method = dislocation["solution_method"]
-        except KeyError, e:
+        except KeyError:
             solution_method = "stroh"
             dislocation["solution_method"] = "stroh"
             print("No solution method specified. Using Stroh's formalism.")
@@ -957,6 +955,7 @@ def calc_image_distances(img_chunk, periodic_boundary, box_size):
     # Bit mask values for decoding Lammps image flags:
     imgmask = np.array(1023, dtype=img_chunk.dtype)
     imgmax = np.array(512, dtype=img_chunk.dtype)
+    imgbits = np.array(10, dtype=img_chunk.dtype)
     img2bits = np.array(20, dtype=img_chunk.dtype)
     image_distances = [None] * 3
     if periodic_boundary[0]:
@@ -1057,7 +1056,7 @@ def read_data(infile, boundary_style):
     coordinates = apply_pbc(
         coordinates, periodic_boundary, image_distances, 'unwrap'
     )
-    coordinates = coordinates.reshape((coordinates.shape[0]/3, 3))
+    coordinates = coordinates.reshape((int(coordinates.shape[0]/3), 3))
     return coordinates
 
 
@@ -1085,6 +1084,12 @@ def write_data(outfile, boundary_style, infile, coordinates):
     my_lammps.command('boundary ' + boundary_style)
     my_lammps.command('read_data ' + infile)
     coordinates = np.ravel(coordinates)
+    # Zero all image flags --- we previously unwrapped atomic coordinates
+    all_zero_bit = 537395712 
+    image = np.zeros((coordinates.shape[0], 1), np.int32) + all_zero_bit
+    my_lammps.scatter_atoms(
+        "image", 0, 1, np.ctypeslib.as_ctypes(image)
+    )
     my_lammps.scatter_atoms(
         "x", 1, 3, np.ctypeslib.as_ctypes(coordinates)
     )
