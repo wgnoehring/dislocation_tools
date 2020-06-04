@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Handles file formats understood by Lammps"""
 import sys
 import numpy as np
 
@@ -15,14 +16,16 @@ def read_data(infile, boundary_style):
 
     Parameters
     ----------
-        infile (str): input data file
-        boundary_style (str): Lammps boundary style (e.g. 's s p' or 'p p p')
+    infile : str
+        input data file
+    boundary_style : str
+        Lammps boundary style (e.g. 's s p' or 'p p p')
 
     Returns
     -------
-    coordinates  (ndarray):   coordinates  of  the  atoms.   Periodic  boundary
-        conditions  are undone,  i.e.  the  atoms are  not  wrapped around  the
-        periodic boundary.
+    coordinates : numpy.ndarray
+        coordinates of the atoms. Periodic boundary conditions are undone,
+        i.e. the atoms are not wrapped around the periodic boundary.
     """
     from lammps import lammps
     my_lammps = lammps()
@@ -61,16 +64,19 @@ def write_data(outfile, boundary_style, infile, coordinates):
 
     Parameters
     ----------
-    outfile (str): output data file
-    boundary_style (str): Lammps boundary style (e.g. 's s p' or 'p p p')
-    infile (str): input data file
-    coordinates (ndarray): coordinates  of  the  atoms.
+    outfile : str
+        output data file
+    boundary_style: str
+        Lammps boundary style (e.g. 's s p' or 'p p p')
+    infile : str
+        input data file
+    coordinates : array-like
+        coordinates  of  the  atoms.
 
     Notes
     -----
-    The  input  data  file  must  be  given  and  is  actually  re-read  before
-    writing, so  that scatter_atoms can be  used to overwrite a  current set of
-    coordinates.
+    The input data file must be given and is actually re-read before writing, so
+    that scatter_atoms can be used to overwrite a current set of coordinates.
     """
     from lammps import lammps
     my_lammps = lammps()
@@ -101,14 +107,17 @@ def read_dump(path_to_dump_file):
 
     Parameters
     ----------
-    path_to_dump_file (str): path to the dump file
+    path_to_dump_file: str
+        path to the dump file
 
     Returns
     -------
-    header (list): header of the dump file
-    atoms_section  (ndarray): ATOMS  section  of  the dump  file  as 2D  array.
-        Contains one  row of data for  each atom. Number of  columns and column
-        contents depend must be inferred from the last line in the header
+    header : list
+        header of the dump file
+    atoms_section : numpy.ndarray
+        ATOMS section of the dump file as 2D array. Contains one row
+        of data for each atom. Number of columns and column contents
+        depend must be inferred from the last line in the header
     """
     with open(path_to_dump_file, 'r') as file:
         list_of_lines = file.readlines()
@@ -129,9 +138,12 @@ def write_dump(outfile, header, atomdata):
 
     Parameters
     ----------
-    outfile (str): file to write to
-    header (list): header of the dump file
-    atomdata (ndarray): one row of data for each atom.
+    outfile: str 
+        file to write to
+    header: list
+        header of the dump file
+    atomdata : array-like
+        one row of data for each atom.
     """
     with open(outfile, 'wb') as file:
         if (sys.version_info.major > 3):
@@ -158,15 +170,18 @@ def calc_image_distances(img_chunk, periodic_boundary, box_size):
 
     Parameters
     ----------
-    img_chunk (ndarray): image flags
-    periodic_boundary (list): element i = True if boundary periodic in i
-    box_size (ndarray): simulation box size
+    img_chunk : array-like
+        image flags
+    periodic_boundary : array-like
+        element i = True if boundary periodic in i
+    box_size : array-like
+        simulation box size
 
     Returns
     -------
-    image_distances (list, len=3): distance that  must be subtracted from x, y,
-        or z-coordinates to  wrap them across the periodic  boundaries. None if
-        boundary is not periodic.
+    image_distances : list 
+        distance that must be subtracted from x, y, or z-coordinates to wrap
+        them across the periodic boundaries. None if boundary is not periodic.
 
     Notes
     -----
@@ -206,17 +221,20 @@ def apply_pbc(dof, periodic_boundary, image_distances, mode):
 
     Parameters
     ----------
-    dof_chunk (ndarray): atomic coordinates
-    periodic_boundary (list): element i = True if boundary in
-        direction i is periodic
-    image_distances (list, len=3): distance that  must be subtracted from x, y,
-        or z-coordinates to  wrap them across the periodic  boundaries. None if
-        boundary is not periodic.
-    mode (string): 'wrap' to wrap coordinates, 'unwrap' to unwrap
+    dof_chunk : array-like
+        atomic coordinates
+    periodic_boundary : list
+        element i = True if boundary in direction i is periodic
+    image_distances : list 
+        distance that must be subtracted from x, y, or z-coordinates to wrap
+        them across the periodic boundaries. None if boundary is not periodic.
+    mode : str
+        'wrap' to wrap coordinates, 'unwrap' to unwrap
 
     Returns
     -------
-    dof_chunk (ndarray): atomic coordinates with pbc applied
+    dof_chunk : numpy.ndarray
+        atomic coordinates with pbc applied
 
     Notes
     -----

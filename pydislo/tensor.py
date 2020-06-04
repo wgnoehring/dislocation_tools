@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Functions for working with tensors"""
 import numpy as np
 
 __author__ = "Wolfram Georg Nöhring"
@@ -14,11 +15,14 @@ def tensor2voigt(t):
 
     Parameters
     ----------
-    t (np.ndarray): elastic stiffness tensor in 3x3x3x3 array representation
+    t : array-like:
+        elastic stiffness tensor in 3x3x3x3 array representation
 
     Returns
     -------
-    v (np.ndarray): elastic stiffness in 6x6 (Voigt-) matrix representation
+    v : numpy.ndarray
+        elastic stiffness in 6x6 (Voigt-) matrix representation
+
     """
     v = np.zeros((6, 6), dtype=float)
     for i in range(1, 4):
@@ -38,11 +42,14 @@ def voigt2tensor(v):
 
     Parameters
     ----------
-    v (np.ndarray): elastic stiffness in 6x6 (Voigt-) matrix representation
+    v : array-like
+        elastic stiffness in 6x6 (Voigt-) matrix representation
 
     Returns
     -------
-    t (np.ndarray): elastic stiffness tensor in 3x3x3x3 array representation
+    t : numpy.ndarray
+        elastic stiffness tensor in 3x3x3x3 array representation
+
     """
     t = np.zeros((3, 3, 3, 3), dtype=float)
     for i in range(1, 4):
@@ -58,10 +65,22 @@ def voigt2tensor(v):
 
 
 def symbolical_ab_contraction(a, b, t):
-    """Return a contraction of the fourth order tensor t and the
-       vectors a and b, see equation 13-162 in Hirth & Lothe's book.
-    In component notation: (ab)_ij = a_i*c_ijkl*b_l.
+    """Return a contraction of the fourth order tensor t and the vectors a and b
+
+    See equation 13-162 in Hirth & Lothe's book [1]
+
+    In component notation
+
+    .. math:: 
+        (ab)_{ij} = a_{i}c_{ijkl}b_{l}.
+
     This function performs the contraction symbolically.
+
+    References
+    ----------
+
+    1. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
+
     """
     contraction_1 = np.tensordot(t, b, axes=([3], [0]))
     contraction_2 = np.tensordot(a, contraction_1, axes=([0], [0]))
@@ -71,9 +90,21 @@ def symbolical_ab_contraction(a, b, t):
 
 
 def numerical_ab_contraction(a, b, t):
-    """Return a contraction of the fourth order tensor t and the
-       vectors a and b, see equation 13-162 in Hirth & Lothe's book.
-    In component notation: (ab)_ij = a_i*c_ijkl*b_l.
+    """Return a contraction of the fourth order tensor t and the vectors a and b
+
+    See equation 13-162 in Hirth & Lothe's book [1]
+
+    In component notation
+
+    .. math:: 
+        (ab)_{ij} = a_{i}c_{ijkl}b_{l}.
+
     This function performs the contraction numerically.
+
+    References
+    ----------
+
+    1. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
+
     """
     return np.einsum('i,ijkl,l', a, t, b, dtype=float, casting='safe')

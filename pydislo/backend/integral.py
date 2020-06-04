@@ -1,7 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Implements the integral method
+
+Functions for computing the displacement field using the
+integral formalism [1]. The variables of the elastic
+problem are given similar names as in Refs. [2] and [3].
+
+References
+----------
+
+1. Barnett, D.M.; Lothe, J. Phys. Norvegica, 7 (1973)
+
+2. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
+
+3. Bacon, D. J.; Barnett, D. M.; Scattergood, R. O. Progress in Materials Science 1978, 23, 51-262.
+
+"""
+import numpy as np
 from scipy.integrate import quad
-from scipy import isclose
 import sympy as sp
 from sympy.utilities.autowrap import ufuncify
 from ..tensor import (
@@ -21,46 +37,55 @@ def calculate_displacements_with_symbolical_integrals(
         radii, angles, b, m, n, xi, c):
     """Compute the displacements with integral formalism and symbolical math
 
-    Calculate  the displacement  using Barnett  and Lothe's  integral formalism
-    [1],  see [2]  and [3].  The  variables of  the elastic  problem are  given
-    similar names  as in [2]  and [3].  The solution involves  integration, see
-    equ. 4.1.25  in [3].  The integrands are  combinations of  matrices, which,
-    in  turn  are  contractions  of  the  elastic  stiffness  tensor  with  two
-    perpendicular  vectors. A  naive,  fully numerical  solution  is slow,  see
-    calculate_displacements_with_numerical_integrals. Here,  the integrands are
-    made  callable functions  of  the  angle omega,  which  is the  integration
-    variable. This  allows fast  evaluation. However,  problems can  arise when
-    attempting to perform trigonomic  simplifications on the symbolic matrices,
-    as well as when symbolically inverting the matrix nn. This might be a sympy
-    issue or  an issue  of number overflow.  Currently, no  simplifications are
-    performed  and nn  is inverted  using LU-decomposition,  which seems  to be
-    stable.
+    Calculate the displacement using Barnett and Lothe's integral formalism
+    [1], see [2] and [3]. The variables of the elastic problem are given
+    similar names as in [2] and [3]. The solution involves integration,
+    see equ. 4.1.25 in [3]. The integrands are combinations of matrices,
+    which, in turn are contractions of the elastic stiffness tensor with
+    two perpendicular vectors. A naive, fully numerical solution is
+    slow, see calculate_displacements_with_numerical_integrals. Here,
+    the integrands are made callable functions of the angle omega,
+    which is the integration variable. This allows fast evaluation.
+    However, problems can arise when attempting to perform trigonomic
+    simplifications on the symbolic matrices, as well as when symbolically
+    inverting the matrix nn. This might be a sympy issue or an issue of
+    number overflow. Currently, no simplifications are performed and
+    nn is inverted using LU-decomposition, which seems to be stable.
 
     Parameters
     ----------
-    radii (numpy.ndarray): Nx1 array of perpendicular distances of the
+    radii : array-like 
+        N×1 array of perpendicular distances of the
         atoms from the line direction
-    angles (numpy.ndarray): Nx1 array of angles in the plane perpendicular
+    angles : array-like 
+        N×1 array of angles in the plane perpendicular
         to xi, and relative to m
-    b (numpy.ndarray): Burgers vector (in laboratory coordinate system)
-    m (numpy.ndarray): x-direction of the dislocation coordinate system
-    n (numpy.ndarray): y-direction of the dislocation coordinate system
-    xi (numpy.ndarray): dislocation line direction; z-direction of the
+    b : array-like 
+        Burgers vector (in laboratory coordinate system)
+    m : array-like 
+        x-direction of the dislocation coordinate system
+    n : array-like 
+        y-direction of the dislocation coordinate system
+    xi : array-like 
+        dislocation line direction; z-direction of the
         dislocation coordinate system
-    c (numpy.ndarray): 3x3x3x3 array representation of elastic stiffness,
+    c : array-like 
+        3×3×3×3 array representation of elastic stiffness,
         given in laboratory coordinates
 
     Returns
     -------
-    u (numpy.ndarray): displacements in laboratory coordinate system
+    u : numpy.ndarray
+        displacements in laboratory coordinate system
 
     References
     ----------
-    [1] Barnett, D.M.; Lothe, J. Phys. Norvegica, 7: 13 (1973)
-    [2] Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition;
-        John Wiley and Sons, 1982. pp 467
-    [3] Bacon, D. J.; Barnett, D. M.; Scattergood, R. O.
-        Progress in Materials Science 1978, 23, 51-262.
+    1. Barnett, D.M.; Lothe, J. Phys. Norvegica, 7 (1973)
+    
+    2. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
+    
+    3. Bacon, D. J.; Barnett, D. M.; Scattergood, R. O. Progress in Materials Science 1978, 23, 51-262.
+
     """
     print("Constructing angular function matrices")
     rotation_matrix = generate_symbolical_rotation_matrix(sp.Matrix(xi))
@@ -153,45 +178,51 @@ def calculate_displacements_with_numerical_integrals(
         radii, angles, b, m, n, xi, c):
     """Compute the displacements with integral formalism and numerical math
 
-    Calculate  the displacement  using Barnett  and Lothe's  integral formalism
-    [1],  see [2]  and [3].  The  variables of  the elastic  problem are  given
-    similar  names  as in  [2]  and  [3].  The solution  involves  integration,
-    see  equ. 4.1.25  in  [3].  The integrands  are  combinations of  matrices,
-    which,  in   turn  are  contractions   of  the  elastic   stiffness  tensor
-    with  two  perpendicular  vectors.  The numerical  integration  used  here,
-    scipy.integrate.quad, currently  does not support  simultaneous integration
-    of  matrix components.  Therefore,  the components  have  to be  integrated
-    independently,  and the  same contractions  have  to be  performed 9  times
-    per  matrix.  The  integral  given  by   equ.  4.1.25  has  to  be  carried
-    out  for   each  atom;  therefore  the   current  numerical  implementation
-    is  relatively  slow.  For  a  faster  solution  using  symbolic  math  see
-    calculate_displacements_with_symbolical_integrals.
+    Calculate the displacement using Barnett and Lothe's integral formalism [1],
+    see [2] and [3]. The variables of the elastic problem are given similar
+    names as in [2] and [3]. The solution involves integration, see equ.
+    4.1.25 in [3]. The integrands are combinations of matrices, which, in turn
+    are contractions of the elastic stiffness tensor with two perpendicular
+    vectors. The numerical integration used here, scipy.integrate.quad,
+    currently does not support simultaneous integration of matrix components.
+    Therefore, the components have to be integrated independently, and the
+    same contractions have to be performed 9 times per matrix. The integral
+    given by equ. 4.1.25 has to be carried out for each atom; therefore the
+    current numerical implementation is relatively slow. For a faster solution
+    using symbolic math see calculate_displacements_with_symbolical_integrals.
 
     Parameters
     ----------
-    radii (numpy.ndarray): Nx1 array of perpendicular distances of the
-        atoms from the line direction
-    angles (numpy.ndarray): Nx1 array of angles in the plane perpendicular
-        to xi, and relative to m
-    b (numpy.ndarray): Burgers vector (in laboratory coordinate system)
-    m (numpy.ndarray): x-direction of the dislocation coordinate system
-    n (numpy.ndarray): y-direction of the dislocation coordinate system
-    xi (numpy.ndarray): dislocation line direction; z-direction of the
-        dislocation coordinate system
-    c (numpy.ndarray): 3x3x3x3 array representation of elastic stiffness,
-        given in laboratory coordinates
+    radii : array-like 
+        N×1 array of perpendicular distances of the atoms from the line
+        direction
+    angles : array-like 
+        N×1 array of angles in the plane perpendicular to xi, and relative to m
+    b : array-like 
+        Burgers vector (in laboratory coordinate system)
+    m : array-like 
+        x-direction of the dislocation coordinate system
+    n : array-like 
+        y-direction of the dislocation coordinate system
+    xi : array-like 
+        dislocation line direction; z-direction of the coordinate system
+    c : array-like 
+        3×3×3×3 array representation of elastic stiffness, given in laboratory
+        coordinates
 
     Returns
     -------
-    u (numpy.ndarray): displacements in laboratory coordinate system
+    u : (numpy.ndarray)
+        displacements in laboratory coordinate system
 
     References
     ----------
-    [1] Barnett, D.M.; Lothe, J. Phys. Norvegica, 7: 13 (1973)
-    [2] Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition;
-        John Wiley and Sons, 1982. pp 467
-    [3] Bacon, D. J.; Barnett, D. M.; Scattergood, R. O.
-        Progress in Materials Science 1978, 23, 51-262.
+    1. Barnett, D.M.; Lothe, J. Phys. Norvegica, 7 (1973)
+
+    2. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
+
+    3. Bacon, D. J.; Barnett, D. M.; Scattergood, R. O. Progress in Materials Science 1978, 23, 51-262.
+
     """
 
     def nninv_integrand(angle, i, j):
@@ -292,12 +323,14 @@ def ufuncify_angular_function(symbolic_function_matrix):
 
     Parameters
     ----------
-    symbolic_function_matrix (numpy.ndarray): matrix of symbolical functions
+    symbolic_function_matrix : array-like 
+        matrix of symbolical functions
 
     Returns
     -------
-    numerical_function_matrix (numpy.ndarray): matrix of numerical functions
-        (numpy ufunc-like functions)
+    numerical_function_matrix : numpy.ndarray
+        matrix of numerical functions (numpy ufunc-like functions)
+
     """
     if len(symbolic_function_matrix.free_symbols) == 1:
         my_symbol = symbolic_function_matrix.free_symbols.pop()
@@ -318,11 +351,14 @@ def generate_symbolical_rotation_matrix(axis):
 
     Parameters
     ----------
-    axis (sympy.Matrix): rotation axis
+    axis : sympy.Matrix
+        rotation axis
 
     Returns
     -------
-    rotation_matrix (sympy.Matrix): rotation matrix; the free symbol is "omega"
+    rotation_matrix : sympy.Matrix
+        rotation matrix; the free symbol is "omega"
+
     """
     angle = sp.Symbol("omega")
     tensor_product = sp.eye(3)
@@ -349,12 +385,16 @@ def generate_numerical_rotation_matrix(axis, angle):
 
     Parameters
     ----------
-    axis (numpy.ndarray): rotation axis
-    angle (float): rotation angle (in the sense of the right hand rule)
+    axis : array-like
+        rotation axis
+    angle : float
+        rotation angle (in the sense of the right hand rule)
 
     Returns
     -------
-    rotation_matrix (numpy.ndarray): rotation matrix
+    rotation_matrix : numpy.ndarray
+        rotation matrix
+
     """
     tensor_product = np.eye(3)
     for i in range(3):
@@ -378,20 +418,35 @@ def generate_numerical_rotation_matrix(axis, angle):
 def check_S_and_B(S, B, m, n, c):
     """Check the matrices S and B of the integral formalism.
 
-    S and B  can be computed both from Barnett  and Lothe's integral formalism,
-    as  well  as from  Stroh's  formalism,  see equations  (13-211),  (13-213),
-    (13-215), and  (13-217) in Hirth and  Lothe's book. This function  checks S
-    and B  as obtained  from the  integral formalism by  comparing them  to the
-    corresponding prediction from Stroh's formalism.
+    :math:`\mathbf{S}` and :math:`\mathbf{B}` can be computed both from
+    Barnett and Lothe's integral formalism, as well as from Stroh's
+    formalism, see equations (13-211), (13-213), (13-215), and (13-217) in
+    Hirth and Lothe's book [2]. This function checks :math:`\mathbf{S}`
+    and :math:`\mathbf{B}` as obtained from the integral formalism by
+    comparing them to the corresponding prediction from Stroh's formalism.
 
     Parameters
     ----------
-    S (nump.ndarray): matrix S, see equ. 13-211 in Hirth and Lothe's book
-    B (nump.ndarray): matrix B, see equ. 13-213 in Hirth and Lothe's book
-    m (numpy.ndarray): x-direction of the dislocation coordinate system
-    n (numpy.ndarray): y-direction of the dislocation coordinate system
-    c (numpy.ndarray): 3x3x3x3 array representation of elastic stiffness,
-        given in laboratory coordinates
+    S : array-like 
+        matrix :math:`\mathbf{S}`, see equ. 13-211 in Hirth and Lothe's book [2]
+    B : array-like 
+        matrix :math:`\mathbf{B}`, see equ. 13-213 in Hirth and Lothe's book [2]
+    m : array-like 
+        x-direction of the dislocation coordinate system
+    n : array-like 
+        y-direction of the dislocation coordinate system
+    c : array-like 
+        3×3×3×3 array representation of elastic
+        stiffness, given in laboratory coordinates
+
+    References
+    ----------
+    1. Barnett, D.M.; Lothe, J. Phys. Norvegica, 7 (1973)
+    
+    2. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
+    
+    3. Bacon, D. J.; Barnett, D. M.; Scattergood, R. O. Progress in Materials Science 1978, 23, 51-262.
+
     """
     Np, Nv = solve_sextic_equations(m, n, c)
     signs = np.sign(np.imag(Np))
@@ -405,7 +460,7 @@ def check_S_and_B(S, B, m, n, c):
                 S_check[k, s] += (
                     1j * A[k, alpha] * L[s, alpha] * signs[alpha]
                 )
-    assert(isclose(S-S_check, 0.0).all())
+    assert(np.isclose(S-S_check, 0.0).all())
     B_check = np.zeros((3, 3), dtype=complex)
     for k in range(3):
         for s in range(3):
@@ -414,7 +469,7 @@ def check_S_and_B(S, B, m, n, c):
                     L[k, alpha] * L[s, alpha] * signs[alpha]
                 )
     B_check /= (-4.0 * np.pi * 1j)
-    assert(isclose(B-B_check, 0.0).all())
+    assert(np.isclose(B-B_check, 0.0).all())
 
 
 def calculate_cylindrical_coordinates(
@@ -423,23 +478,29 @@ def calculate_cylindrical_coordinates(
 
     Given a  list of coordinates  in 3D space,  calculate the radii  and angles
     that  determine the  perpendicular  positions  relative to  a  line in  the
-    direction  line_direction through  the  origin. The  datum  from which  the
+    direction  `line_direction` through  the  origin. The  datum  from which  the
     angles are measured is given by perpendicular_direction.
 
     Parameters
     ----------
-    coordinates (numpy.ndarray): Nx3 array of coordinates
-    line_direction (numpy.ndarray): line direction relative to which the
+    coordinates : array-like 
+        N×3 array of coordinates
+    line_direction : array-like 
+        line direction relative to which the
         perpendicular distance is calculated
-    perpendicular_direction (numpy.ndarray): direction perpendicular to
-        line_direction; serves as reference datum for calculating angles
+    perpendicular_direction : array-like 
+        direction perpendicular to line_direction;
+        serves as reference datum for calculating angles
 
     Returns
     -------
-    radii (numpy.ndarray): Nx1 array of perpendicular distances of the
-        coordinates from the line direction
-    angles (numpy.ndarray): Nx1 array of angles in the plane perpendicular
-        to line_direction, and relative to perpendicular_direction
+    radii : numpy.ndarray
+        N×1 array of perpendicular distances of
+        the coordinates from the line direction
+    angles : numpy.ndarray 
+        N×1 array of angles in the plane perpendicular to
+        line_direction, and relative to perpendicular_direction
+
     """
     nrows = coordinates.shape[0]
     p1 = perpendicular_direction / np.linalg.norm(perpendicular_direction)

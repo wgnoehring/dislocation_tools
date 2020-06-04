@@ -1,63 +1,104 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Insert dislocations into an anisotropic medium.
-insert_dislocation_adv.py configfile
+import sys
+import click
+import configparser
+import numpy as np
+from pydislo.io.lammps_formats import read_data, write_data, read_dump, write_dump
+from pydislo.tensor import voigt2tensor
+from pydislo.backend.stroh import (
+    solve_sextic_equations, 
+    calculate_displacements_from_eigensystem
+)
+from pydislo.backend.integral import (
+        calculate_displacements_with_numerical_integrals,
+        calculate_displacements_with_symbolical_integrals,
+        calculate_cylindrical_coordinates
+)
 
-Read atom coordinates from a Lammps file and insert one or more dislocations by
-applying their anisotropic-elastic displacement  field. The field is calculated
-with  Stroh's advanced  straight  dislocation formalism,  or  with Barnett  and
-Lothe's integral  formalism [2].  The two formalisms  are closely  related, see
-Hirth and Lothe's book [3], and the review of Bacon etal. [4].
+__author__ = "Wolfram Georg Nöhring"
+__copyright__ = """\
+© All rights reserved. ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, 
+Switzerland, Laboratory for Multiscale Mechanics Modelling, 2015"""
+__license__ = "GNU General Public License"
+__email__ = "wolfram.nohring@imtek.uni-freiburg.de"
 
-The variables of the elastic problem are given similar names as in [3] and [4].
+@click.command()
+@click.argument("configuration_file", type=click.Path(exists=True, readable=True))
+def insert(configuration_file):
+    """Insert dislocations into an anisotropic medium.
+    
+    Read atom coordinates from a Lammps file and insert one or more dislocations
+    by applying their anisotropic-elastic displacement field. The field is
+    calculated with Stroh's advanced straight dislocation formalism [1], or with
+    Barnett and Lothe's integral formalism [2]. The two formalisms are closely
+    related, see Hirth and Lothe's book [3], and the review of Bacon etal. [4].
+    
+    The variables of the elastic problem are given similar names as in [3] and [4].
 
-Parameters
-----------
-configfile (str): configuration file in the format of python-configparser.
-    The file contains three mandatory sections:
-    [simulation cell]
-        x, y, z (ndarray): The orientation of  the crystal relative to the x, y
-            and z directions of the simulation  cell The vectors do not need to
-            be  normalized.  For each  vector,  the  three components  must  be
-            written as three floating point numbers on the same line, separated
-            by whitespace.
-        boundary_style (str): Boundary  style as used by  the Lammps 'boundary'
-            command, e.g. 's s p'.
-    [elastic  constants]
-        c11, c12, c44  (float): cubic elastic stiffnesses. These  should be the
-            components  relative to  the  [100]-[010]-[001] CRYSTAL  coordinate
-            system; NOT relative  to the simulation cell.  The program performs
-            all the required tensor rotations!
+    The configuration file CONFIGURATION_FILE contains three
+    mandatory sections :code:`[simulation cell]`, :code:`[elastic
+    constants]`, and :code:`[files]`, with the following values:
 
-    [files]
-        format (str): 'dump' or 'data'
-        input, output (str): paths to the input and output files.
-        append_displacements (bool):  if True,  the displacement field  will be
-            appended to the output file (as the last three columns). 'ux uy uz'
-            will be appended to the ITEM:ATOMS header line.
+    :code:`[simulation cell]`
 
-    The mandatory sections are followed by an arbitrary number of sections with
-    the name [dislocationX], where X is an integer. Each [dislocationX] section
-    defines  a  dislocation. If  there  are  several  such sections,  then  the
-    integers X decide in which sequence the displacement fields will be applied
-    (ascending order, i.e. dislocation1 would be inserted before dislocation2).
-    Parameters in a dislocation-section:
-        b (ndarray): Burgers vector (distance units)
-        xi (ndarray): Line direction, does not need to be normalized
-        center (ndarray): Center in simulation cell coordinates
-        m (ndarray,  optional): first  direction in the  dislocation coordinate
-            system, expressed  in crystal coordinates. This  vector is parallel
-            to the  normal of the  plane along which the  cut would be  made to
-            insert the dislocation.
-        solution_method  (str):  Method  for  solving  for  the  displacements.
-            Recognized   choices   are:   "stroh"  (for   Stroh's   formalism),
-            "symbolical_integral_method"  (for   the  Barnett-Lothe  formalism,
-            using symbolical math), as well as "numerical_integral_method" (for
-            the Barnett-Lothe formalism, using  numerical math). The symbolical
-            backend is faster than the numerical one.
+    :param array-like x: crystal direction that is parallel to the x-direction of the cell
+    :param array-like y: crystal direction that is parallel to the y-direction of the cell
+    :param array-like z: crystal direction that is parallel to the z-direction of the cell
+    :param array-like boundary_style:  Boundary  style as used by  the Lammps 'boundary' command, e.g. 's s p'.
 
+    .. note:: 
 
-    Example file:
+        The components of the vectors should be separated by
+        whitespace and the vectors do not need to be normalized.
+
+    :code:`[elastic  constants]`
+
+    :param float c11: cubic elastic constant :math:`C_{11}`
+    :param float c12: cubic elastic constant :math:`C_{12}`
+    :param float c44: cubic elastic constant :math:`C_{44}`
+
+    .. note:: 
+
+        These should be the components relative to the [100]-[010]-[001]
+        CRYSTAL coordinate system; NOT relative to the simulation
+        cell. The program performs all the required tensor rotations!
+
+    :code:`[files]`
+
+    :param str format: 'dump' or 'data'
+    :param str input:  path to input file
+    :param str output:  path to output file
+    :param bool append_displacements: if True, the displacement field will be appended to
+                                      the output file (as the last three columns). 'ux uy
+                                      uz' will be appended to the ITEM:ATOMS header line.
+
+    The mandatory sections are followed by an arbitrary number of sections
+    with the name :code:`[dislocationX]`, where X is an integer. Each
+    [dislocationX] section defines a dislocation. If there are several such
+    sections, then the integers X decide in which sequence the displacement
+    fields will be applied (ascending order, i.e. dislocation1 would be
+    inserted before dislocation2). Parameters in a dislocation-section:
+
+    :param array-like b: Burgers vector (distance units)
+    :param array-like xi: Line direction, does not need to be normalized
+    :param array-like center: Center of dislocation in simulation cell coordinates
+    :parm array-like m: (optional) first  direction in the  dislocation coordinate
+                        system, expressed in crystal coordinates. This vector
+                        is parallel to the normal of the plane along which
+                        the cut would be made to insert the dislocation.
+    :parm str solution_method: Method  for  solving  for  the  displacements.
+                               Recognized   choices   are:   "stroh"  (for   Stroh's   formalism),
+                               "symbolical_integral_method"  (for   the  Barnett-Lothe  formalism,
+                               using symbolical math), as well as "numerical_integral_method" (for
+                               the Barnett-Lothe formalism, using  numerical math). The symbolical
+                               backend is faster than the numerical one.
+
+    Example
+    -------
+
+    .. code:: ini
+
         [simulation cell]
         x =  1 -2  1
         y = -1 -1 -1
@@ -79,56 +120,30 @@ configfile (str): configuration file in the format of python-configparser.
         center = 125.444552873685 88.702693999897 0.0
         solution_method = stroh
 
-Notes
------
-Currently, Lammps  dump and  data files  are supported.  Input dump  files must
-contain the columns 'id',  'type', 'x', 'y', and 'z', in  this order. They must
-contain a single snapshot. Data files  are currently read and written using the
-Lammps Python API, i.e. Lammps is actually called.
+    
+    Notes
+    -----
+    Currently, Lammps  dump and  data files  are supported.  Input dump  files must
+    contain the columns 'id',  'type', 'x', 'y', and 'z', in  this order. They must
+    contain a single snapshot. Data files  are currently read and written using the
+    Lammps Python API, i.e. Lammps is actually called.
+    
 
-Todo: a data file  parser which does not rely on  Lammps should be implemented.
-The file reading / writing functionality should be outsourced into a module.
+    References
+    ----------
+    1. Stroh, A.N. J. Math. Phys., 41: 77 (1962)
 
-References
-----------
-[1] Stroh, A.N. J. Math. Phys., 41: 77 (1962)
-[2] Barnett, D.M.; Lothe, J. Phys. Norvegica, 7: 13 (1973)
-[3] Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition;
-    John Wiley and Sons, 1982. pp 467
-[4] Bacon, D. J.; Barnett, D. M.; Scattergood, R. O.
-    Progress in Materials Science 1978, 23, 51-262.
-"""
+    2. Barnett, D.M.; Lothe, J. Phys. Norvegica, 7 (1973)
 
-import sys
-import configparser
-import numpy as np
-from scipy import isclose
+    3. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
 
-from ..io.lammps_formats import read_data, write_data, read_dump, write_dump
-from ..backend.stroh import 
-from ..tensor.tensor import voigt2tensor
-from ..backend.stroh import (
-    solve_sextic_equations, 
-    calculate_displacements_from_eigensystem
-)
-from ..backend.integral import (
-        calculate_displacements_with_numerical_integrals
-        calculate_displacements_with_symbolical_integrals,
-        calculate_cylindrical_coordinates
-)
+    4. Bacon, D. J.; Barnett, D. M.; Scattergood, R. O. Progress in Materials Science 1978, 23, 51-262.
 
-__author__ = "Wolfram Georg Nöhring"
-__copyright__ = """\
-© All rights reserved. ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, 
-Switzerland, Laboratory for Multiscale Mechanics Modelling, 2015"""
-__license__ = "GNU General Public License"
-__email__ = "wolfram.nohring@imtek.uni-freiburg.de"
+    """
 
-def main():
     # Parse coordinate system, elastic constants, and files
-    configfile = sys.argv[1]
     config = configparser.ConfigParser()
-    config.read(configfile)
+    config.read(configuration_file)
     x = np.array(config.get('simulation cell', 'x').split(), dtype=float)
     y = np.array(config.get('simulation cell', 'y').split(), dtype=float)
     z = np.array(config.get('simulation cell', 'z').split(), dtype=float)
@@ -206,7 +221,7 @@ def main():
     r_crys_lab[0, :] = x / np.linalg.norm(x)
     r_crys_lab[1, :] = y / np.linalg.norm(y)
     r_crys_lab[2, :] = z / np.linalg.norm(z)
-    assert(isclose(np.linalg.det(r_crys_lab), 1.0))
+    assert(np.isclose(np.linalg.det(r_crys_lab), 1.0))
     c = np.einsum(
         'ig,jh,ghmn,km,ln',
         r_crys_lab, r_crys_lab, c, r_crys_lab, r_crys_lab
@@ -232,18 +247,18 @@ def main():
             m = np.einsum('ij,j', r_crys_lab, m)
 
         # Define the dislocation coordinate system
-        zeros = isclose(xi, 0.0)
+        zeros = np.isclose(xi, 0.0)
         assert(not np.all(zeros))
         if not direction_m_set_by_user:
             m = get_m_direction(xi)
         n = np.cross(xi, m)
-        assert(isclose(np.dot(xi, m), 0.0))
-        assert(isclose(np.dot(xi, n), 0.0))
+        assert(np.isclose(np.dot(xi, m), 0.0))
+        assert(np.isclose(np.dot(xi, n), 0.0))
         r = np.zeros((3, 3), dtype=float)
         r[0, :] = m
         r[1, :] = n
         r[2, :] = xi
-        assert(isclose(np.linalg.det(r), 1.0))
+        assert(np.isclose(np.linalg.det(r), 1.0))
 
         coordinates -= center
         solution_method = dislocation["solution_method"]
@@ -301,7 +316,7 @@ def get_m_direction(xi):
     m (numpy.ndarray): vector perpendicular to xi
     """
     m = np.zeros(3, dtype=float)
-    zeros = isclose(xi, 0.0)
+    zeros = np.isclose(xi, 0.0)
     if np.any(zeros):
         for i in range(0, 3):
             if(zeros[i]):

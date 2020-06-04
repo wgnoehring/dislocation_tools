@@ -1,7 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Implements Stroh theory
+
+Functions for computing the displacement field using
+Stroh's formalism [1]. The variables of the elastic
+problem are given similar names as in Refs. [2] and [3].
+
+References
+----------
+    
+1. Stroh, A.N. J. Math. Phys., 41: 77 (1962)
+  
+2. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
+  
+3. Bacon, D. J.; Barnett, D. M.; Scattergood, R. O. Progress in Materials Science 1978, 23, 51-262.
+
+""" 
 import numpy as np
-from scipy import isclose
 from ..tensor import numerical_ab_contraction
 
 __author__ = "Wolfram Georg Nöhring"
@@ -15,20 +30,29 @@ __email__ = "wolfram.nohring@imtek.uni-freiburg.de"
 def solve_sextic_equations(m, n, c):
     """ Compute the eigenvalues and eigenvectors of the problem.
 
+    The equations below refer to pp. 467 in [1].
+
     Parameters
     ----------
-    m (numpy.ndarray): x-direction of the dislocation coordinate system
-    n (numpy.ndarray): y-direction of the dislocation coordinate system
-    c (numpy.ndarray): 3x3x3x3 array representation of elastic stiffness,
+    m : array-like
+        x-direction of the dislocation coordinate system
+    n : array-like
+        y-direction of the dislocation coordinate system
+    c : array-like
+        3×3×3×3 array representation of elastic stiffness,
         given in laboratory coordinates
-
-    The equations below refer to:
-    cf. pp. 467 in J.P. Hirth and J. Lothe, Theory of Dislocations, 2nd ed.
 
     Returns
     -------
-    Np (numpy.ndarray): eigenvalues
-    Nv (numpy.ndarray): eigenvectors
+    Np : numpy.ndarray
+        eigenvalues
+    Nv : numpy.ndarray
+        eigenvectors
+
+    References
+    ----------
+    1. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
+
     """
     mm = numerical_ab_contraction(m, m, c)
     nn = numerical_ab_contraction(n, n, c)
@@ -53,15 +77,15 @@ def solve_sextic_equations(m, n, c):
     V[0:3, 3:6] = I
     V[3:6, 0:3] = I
     # Assert that N has the required symmetries, see equation 13-172
-    assert(isclose(N.T - np.dot(V, np.dot(N, V)), 0.0).all())
-    assert(isclose(np.dot(N.T, V) - np.dot(V, N), 0.0).all())
+    assert(np.isclose(N.T - np.dot(V, np.dot(N, V)), 0.0).all())
+    assert(np.isclose(np.dot(N.T, V) - np.dot(V, N), 0.0).all())
     # Solve the |N-pU| for p (equation 13-170)
     Np, Nv = np.linalg.eig(N)
     # The eigenvector Nv contains the vectors A and L.
     for i in range(0, 6):
         # Assert that L can be computed from A as specified by equ. 13-167:
         assert(
-            isclose(
+            np.isclose(
                 np.dot(-(nm + Np[i] * nn), Nv[0:3, i]) - Nv[3:6, i], 0.0
             ).all()
         )
@@ -69,12 +93,12 @@ def solve_sextic_equations(m, n, c):
         norm = 2.0 * np.dot(Nv[0:3, i], Nv[3:6, i])
         Nv[0:3, i] /= np.sqrt(norm)
         Nv[3:6, i] /= np.sqrt(norm)
-        assert(isclose(2.0 * np.dot(Nv[0:3, i], Nv[3:6, i]), 1.0))
+        assert(np.isclose(2.0 * np.dot(Nv[0:3, i], Nv[3:6, i]), 1.0))
     for i in range(0, 6):
         for j in range(0, 6):
             # Assert that equation 13-177 is satisfied:
             assert(
-                isclose(
+                np.isclose(
                     np.real(
                         np.dot(Nv[0:3, i], Nv[3:6, j]) +
                         np.dot(Nv[0:3, j], Nv[3:6, i])
@@ -84,7 +108,7 @@ def solve_sextic_equations(m, n, c):
             )
             # Assert the orthogonality relation, equ 13-176:
             assert(
-                isclose(np.dot(Nv[:, j], np.dot(V, Nv[:, i])), float(i == j))
+                np.isclose(np.dot(Nv[:, j], np.dot(V, Nv[:, i])), float(i == j))
             )
     return (Np, Nv)
 
@@ -94,17 +118,25 @@ def calculate_displacements_from_eigensystem(coordinates, b, m, n, Np, Nv):
 
     Parameters
     ----------
-    b (numpy.ndarray): Burgers vector (in laboratory coordinate system)
-    m (numpy.ndarray): x-direction of the dislocation coordinate system
-    n (numpy.ndarray): y-direction of the dislocation coordinate system
-    c (numpy.ndarray): 3x3x3x3 array representation of elastic stiffness,
+    b : array-like 
+        Burgers vector (in laboratory coordinate system)
+    m : array-like 
+        x-direction of the dislocation coordinate system
+    n : array-like 
+        y-direction of the dislocation coordinate system
+    c : array-like 
+        3×3×3×3 array representation of elastic stiffness,
         given in laboratory coordinates
-    Np (numpy.ndarray): eigenvalues
-    Nv (numpy.ndarray): eigenvectors
+    Np : array-like 
+        eigenvalues
+    Nv : array-like 
+        eigenvectors
 
     Returns
     -------
-    u (numpy.ndarray): displacements in laboratory coordinate system
+    u : numpy.ndarray
+        displacements in laboratory coordinate system
+
     """
     # Calculate the constant factors in the summation for the displacements
     signs = np.sign(np.imag(Np))
@@ -119,5 +151,5 @@ def calculate_displacements_from_eigensystem(coordinates, b, m, n, Np, Nv):
         (1.0 / (2.0 * np.pi * 1.0j)) *
         np.einsum('ij,kj', np.log(eta), constant_factor)
     )
-    assert(isclose(np.imag(u), 0.0).all())
+    assert(np.isclose(np.imag(u), 0.0).all())
     return np.real(u)
