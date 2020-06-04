@@ -1,5 +1,5 @@
-Pydislo
-=======
+Dislocation tools
+=================
 
 This reposistory contains functions for inserting dislocations into crystals
 by imposing the anisotropic-elastic solution of the displacement field.
