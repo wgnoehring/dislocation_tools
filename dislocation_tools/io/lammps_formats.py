@@ -9,7 +9,6 @@ __copyright__ = """\
 © All rights reserved. ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, 
 Switzerland, Laboratory for Multiscale Mechanics Modelling, 2015"""
 __license__ = "GNU General Public License"
-__email__ = "wolfram.nohring@imtek.uni-freiburg.de"
 
 def read_data(infile, boundary_style):
     """Read a Lammps data file.
