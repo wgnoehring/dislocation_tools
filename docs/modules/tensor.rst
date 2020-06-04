@@ -1,7 +1,7 @@
 Tensor module
 =============
 
-.. automodule:: pydislo.tensor
+.. automodule:: dislocation_tools.tensor
     :members:
     :undoc-members:
     :show-inheritance:

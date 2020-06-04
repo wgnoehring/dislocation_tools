@@ -1,20 +1,20 @@
 Backend package
 ===============
 
-.. automodule:: pydislo.backend
+.. automodule:: dislocation_tools.backend
     :members:
     :undoc-members:
     :show-inheritance:
 
 .. autosummary::
 
-   pydislo.backend.stroh
-   pydislo.backend.integral
+   dislocation_tools.backend.stroh
+   dislocation_tools.backend.integral
 
-.. automodapi:: pydislo.backend.stroh
+.. automodapi:: dislocation_tools.backend.stroh
    :skip: numerical_ab_contraction
 
-.. automodapi:: pydislo.backend.integral
+.. automodapi:: dislocation_tools.backend.integral
    :skip: quad
    :skip: ufuncify
    :skip: numerical_ab_contraction

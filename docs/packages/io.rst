@@ -1,13 +1,13 @@
 I/O package
 ===========
 
-.. automodule:: pydislo.io
+.. automodule:: dislocation_tools.io
     :members:
     :undoc-members:
     :show-inheritance:
 
 .. autosummary::
 
-   pydislo.io.lammps_formats
+   dislocation_tools.io.lammps_formats
 
-.. automodapi:: pydislo.io.lammps_formats
+.. automodapi:: dislocation_tools.io.lammps_formats

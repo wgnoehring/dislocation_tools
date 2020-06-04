@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'pydislo'
+project = 'dislocation_tools'
 copyright = '2020, Wolfram Georg Nöhring'
 author = 'Wolfram Georg Nöhring'
 

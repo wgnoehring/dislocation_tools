@@ -4,13 +4,13 @@ import sys
 import click
 import configparser
 import numpy as np
-from pydislo.io.lammps_formats import read_data, write_data, read_dump, write_dump
-from pydislo.tensor import voigt2tensor
-from pydislo.backend.stroh import (
+from dislocation_tools.io.lammps_formats import read_data, write_data, read_dump, write_dump
+from dislocation_tools.tensor import voigt2tensor
+from dislocation_tools.backend.stroh import (
     solve_sextic_equations, 
     calculate_displacements_from_eigensystem
 )
-from pydislo.backend.integral import (
+from dislocation_tools.backend.integral import (
         calculate_displacements_with_numerical_integrals,
         calculate_displacements_with_symbolical_integrals,
         calculate_cylindrical_coordinates

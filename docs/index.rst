@@ -1,4 +1,4 @@
-.. pydislo documentation master file, created by
+.. dislocation_tools documentation master file, created by
    sphinx-quickstart on Thu Jun  4 15:42:31 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
