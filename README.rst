@@ -4,6 +4,11 @@ Dislocation tools
 This reposistory contains functions for inserting dislocations into crystals
 by imposing the anisotropic-elastic solution of the displacement field.
 
+Documentation: https://wgnoehring.github.io/dislocation_tools/
+
+Source: https://github.com/wgnoehring/dislocation_tools
+
+
 Dependencies
 ------------
 
