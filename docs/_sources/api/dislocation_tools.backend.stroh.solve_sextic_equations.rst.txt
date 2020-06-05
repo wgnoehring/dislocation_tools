@@ -1,0 +1,6 @@
+solve_sextic_equations
+======================
+
+.. currentmodule:: dislocation_tools.backend.stroh
+
+.. autofunction:: solve_sextic_equations

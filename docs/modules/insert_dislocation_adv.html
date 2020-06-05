@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Script for inserting dislocations &mdash; dislocation_tools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Backend package" href="../packages/backend.html" />
+    <link rel="prev" title="Dislocation tools" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> dislocation_tools
+          
+
+          
+            
+            <img src="../_static/dislocation.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Script for inserting dislocations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../packages/backend.html">Backend package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../packages/io.html">I/O package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor.html">Tensor module</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dislocation_tools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Script for inserting dislocations</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/modules/insert_dislocation_adv.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="script-for-inserting-dislocations">
+<h1>Script for inserting dislocations<a class="headerlink" href="#script-for-inserting-dislocations" title="Permalink to this headline">¶</a></h1>
+<p>The script <code class="code docutils literal notranslate"><span class="pre">insert_dislocation_adv.py</span></code> can be used to insert one or more
+straight dislocations into a configuration given as Lammps dump or data file.</p>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python insert_dislocation_adv.py CONFIGURATION_FILE
+</pre></div>
+</div>
+<p>Where CONFIGURATION_FILE is a plain text file which contains
+information on files, dislocations, etc. See the documentation below.</p>
+<dl class="function">
+<dt id="scripts.insert_dislocation_adv.insert">
+<code class="sig-prename descclassname">scripts.insert_dislocation_adv.</code><code class="sig-name descname">insert</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.insert_dislocation_adv.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert dislocations into an anisotropic medium.</p>
+<p>Read atom coordinates from a Lammps file and insert one or more dislocations
+by applying their anisotropic-elastic displacement field. The field is
+calculated with Stroh’s advanced straight dislocation formalism [1], or with
+Barnett and Lothe’s integral formalism [2]. The two formalisms are closely
+related, see Hirth and Lothe’s book [3], and the review of Bacon etal. [4].</p>
+<p>The variables of the elastic problem are given similar names as in [3] and [4].</p>
+<p>The configuration file CONFIGURATION_FILE contains three
+mandatory sections <code class="code docutils literal notranslate"><span class="pre">[simulation</span> <span class="pre">cell]</span></code>, <code class="code docutils literal notranslate"><span class="pre">[elastic</span>
+<span class="pre">constants]</span></code>, and <code class="code docutils literal notranslate"><span class="pre">[files]</span></code>, with the following values:</p>
+<p><code class="code docutils literal notranslate"><span class="pre">[simulation</span> <span class="pre">cell]</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>array-like</em>) – crystal direction that is parallel to the x-direction of the cell</p></li>
+<li><p><strong>y</strong> (<em>array-like</em>) – crystal direction that is parallel to the y-direction of the cell</p></li>
+<li><p><strong>z</strong> (<em>array-like</em>) – crystal direction that is parallel to the z-direction of the cell</p></li>
+<li><p><strong>boundary_style</strong> (<em>array-like</em>) – Boundary  style as used by  the Lammps ‘boundary’ command, e.g. ‘s s p’.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The components of the vectors should be separated by
+whitespace and the vectors do not need to be normalized.</p>
+</div>
+<p><code class="code docutils literal notranslate"><span class="pre">[elastic</span>&#160; <span class="pre">constants]</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>c11</strong> (<em>float</em>) – cubic elastic constant <span class="math notranslate nohighlight">\(C_{11}\)</span></p></li>
+<li><p><strong>c12</strong> (<em>float</em>) – cubic elastic constant <span class="math notranslate nohighlight">\(C_{12}\)</span></p></li>
+<li><p><strong>c44</strong> (<em>float</em>) – cubic elastic constant <span class="math notranslate nohighlight">\(C_{44}\)</span></p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These should be the components relative to the [100]-[010]-[001]
+CRYSTAL coordinate system; NOT relative to the simulation
+cell. The program performs all the required tensor rotations!</p>
+</div>
+<p><code class="code docutils literal notranslate"><span class="pre">[files]</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>format</strong> (<em>str</em>) – ‘dump’ or ‘data’</p></li>
+<li><p><strong>input</strong> (<em>str</em>) – path to input file</p></li>
+<li><p><strong>output</strong> (<em>str</em>) – path to output file</p></li>
+<li><p><strong>append_displacements</strong> (<em>bool</em>) – if True, the displacement field will be appended to
+the output file (as the last three columns). ‘ux uy
+uz’ will be appended to the ITEM:ATOMS header line.</p></li>
+</ul>
+</dd>
+</dl>
+<p>The mandatory sections are followed by an arbitrary number of sections
+with the name <code class="code docutils literal notranslate"><span class="pre">[dislocationX]</span></code>, where X is an integer. Each
+[dislocationX] section defines a dislocation. If there are several such
+sections, then the integers X decide in which sequence the displacement
+fields will be applied (ascending order, i.e. dislocation1 would be
+inserted before dislocation2). Parameters in a dislocation-section:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>b</strong> (<em>array-like</em>) – Burgers vector (distance units)</p></li>
+<li><p><strong>xi</strong> (<em>array-like</em>) – Line direction, does not need to be normalized</p></li>
+<li><p><strong>center</strong> (<em>array-like</em>) – Center of dislocation in simulation cell coordinates</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parm array-like m</dt>
+<dd class="field-even"><p>(optional) first  direction in the  dislocation coordinate
+system, expressed in crystal coordinates. This vector
+is parallel to the normal of the plane along which
+the cut would be made to insert the dislocation.</p>
+</dd>
+<dt class="field-odd">Parm str solution_method</dt>
+<dd class="field-odd"><p>Method  for  solving  for  the  displacements.
+Recognized   choices   are:   “stroh”  (for   Stroh’s   formalism),
+“symbolical_integral_method”  (for   the  Barnett-Lothe  formalism,
+using symbolical math), as well as “numerical_integral_method” (for
+the Barnett-Lothe formalism, using  numerical math). The symbolical
+backend is faster than the numerical one.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[simulation cell]</span>
+<span class="na">x</span> <span class="o">=</span>  <span class="s">1 -2  1</span>
+<span class="na">y</span> <span class="o">=</span> <span class="s">-1 -1 -1</span>
+<span class="na">z</span> <span class="o">=</span>  <span class="s">1  0 -1</span>
+<span class="na">boundary_style</span> <span class="o">=</span> <span class="s">s s p</span>
+<span class="k">[elastic constants]</span>
+<span class="na">c11</span> <span class="o">=</span> <span class="s">170.221549146026319</span>
+<span class="na">c12</span> <span class="o">=</span> <span class="s">122.600531649638015</span>
+<span class="na">c44</span> <span class="o">=</span> <span class="s">75.848200859164038</span>
+<span class="k">[files]</span>
+<span class="na">format</span> <span class="o">=</span> <span class="s">dump</span>
+<span class="na">input</span>  <span class="o">=</span> <span class="s">Cu_parallelepiped.atom</span>
+<span class="na">output</span> <span class="o">=</span> <span class="s">Cu_parallelepiped_with_screw_dislocation.atom</span>
+<span class="na">append_displacements</span> <span class="o">=</span> <span class="s">True</span>
+<span class="k">[dislocation1]</span>
+<span class="na">b</span>   <span class="o">=</span>  <span class="s">-1.807500856188893   0.000000000000000   1.807500856188893</span>
+<span class="na">xi</span>  <span class="o">=</span>  <span class="s">-1 0 1</span>
+<span class="na">m</span>   <span class="o">=</span>   <span class="s">1 2 1</span>
+<span class="na">center</span> <span class="o">=</span> <span class="s">125.444552873685 88.702693999897 0.0</span>
+<span class="na">solution_method</span> <span class="o">=</span> <span class="s">stroh</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Currently, Lammps  dump and  data files  are supported.  Input dump  files must
+contain the columns ‘id’,  ‘type’, ‘x’, ‘y’, and ‘z’, in  this order. They must
+contain a single snapshot. Data files  are currently read and written using the
+Lammps Python API, i.e. Lammps is actually called.</p>
+<p class="rubric">References</p>
+<ol class="arabic simple">
+<li><p>Stroh, A.N. J. Math. Phys., 41: 77 (1962)</p></li>
+<li><p>Barnett, D.M.; Lothe, J. Phys. Norvegica, 7 (1973)</p></li>
+<li><p>Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467</p></li>
+<li><p>Bacon, D. J.; Barnett, D. M.; Scattergood, R. O. Progress in Materials Science 1978, 23, 51-262.</p></li>
+</ol>
+</dd></dl>
+
+<dl class="function">
+<dt id="scripts.insert_dislocation_adv.get_m_direction">
+<code class="sig-prename descclassname">scripts.insert_dislocation_adv.</code><code class="sig-name descname">get_m_direction</code><span class="sig-paren">(</span><em class="sig-param">xi</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.insert_dislocation_adv.get_m_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find two directions which are perpendicular to the line direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>(</strong><strong>numpy.ndarray</strong><strong>)</strong> (<em>xi</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>m (numpy.ndarray)</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>vector perpendicular to xi</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../packages/backend.html" class="btn btn-neutral float-right" title="Backend package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../index.html" class="btn btn-neutral float-left" title="Dislocation tools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Wolfram Georg Nöhring
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

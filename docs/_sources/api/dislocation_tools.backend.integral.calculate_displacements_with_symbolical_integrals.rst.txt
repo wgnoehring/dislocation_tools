@@ -1,0 +1,6 @@
+calculate_displacements_with_symbolical_integrals
+=================================================
+
+.. currentmodule:: dislocation_tools.backend.integral
+
+.. autofunction:: calculate_displacements_with_symbolical_integrals

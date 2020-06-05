@@ -1,0 +1,6 @@
+check_S_and_B
+=============
+
+.. currentmodule:: dislocation_tools.backend.integral
+
+.. autofunction:: check_S_and_B

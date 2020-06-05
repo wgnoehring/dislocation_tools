@@ -1,0 +1,6 @@
+calculate_displacements_from_eigensystem
+========================================
+
+.. currentmodule:: dislocation_tools.backend.stroh
+
+.. autofunction:: calculate_displacements_from_eigensystem

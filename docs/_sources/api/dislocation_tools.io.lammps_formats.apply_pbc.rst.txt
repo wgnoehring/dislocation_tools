@@ -1,0 +1,6 @@
+apply_pbc
+=========
+
+.. currentmodule:: dislocation_tools.io.lammps_formats
+
+.. autofunction:: apply_pbc

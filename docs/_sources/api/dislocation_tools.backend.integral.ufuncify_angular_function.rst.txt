@@ -1,0 +1,6 @@
+ufuncify_angular_function
+=========================
+
+.. currentmodule:: dislocation_tools.backend.integral
+
+.. autofunction:: ufuncify_angular_function

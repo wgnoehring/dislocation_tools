@@ -1,0 +1,6 @@
+write_dump
+==========
+
+.. currentmodule:: dislocation_tools.io.lammps_formats
+
+.. autofunction:: write_dump

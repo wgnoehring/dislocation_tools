@@ -1,0 +1,6 @@
+read_data
+=========
+
+.. currentmodule:: dislocation_tools.io.lammps_formats
+
+.. autofunction:: read_data
