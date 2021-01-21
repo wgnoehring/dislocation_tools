@@ -36,8 +36,8 @@ def insert(configuration_file):
     The variables of the elastic problem are given similar names as in [3] and [4].
 
     The configuration file CONFIGURATION_FILE contains three
-    mandatory sections :code:`[simulation cell]`, :code:`[elastic
-    constants]`, and :code:`[files]`, with the following values:
+    mandatory sections :code:`[simulation cell]`, :code:`[elastic constants]`, 
+    and :code:`[files]`, with the following values:
 
     :code:`[simulation cell]`
 
@@ -79,6 +79,7 @@ def insert(configuration_file):
     fields will be applied (ascending order, i.e. dislocation1 would be
     inserted before dislocation2). Parameters in a dislocation-section:
 
+    \b
     :param array-like b: Burgers vector (distance units)
     :param array-like xi: Line direction, does not need to be normalized
     :param array-like center: Center of dislocation in simulation cell coordinates
@@ -93,11 +94,13 @@ def insert(configuration_file):
                                the Barnett-Lothe formalism, using  numerical math). The symbolical
                                backend is faster than the numerical one.
 
+    \b
     Example
     -------
 
     .. code:: ini
 
+    \b
         [simulation cell]
         x =  1 -2  1
         y = -1 -1 -1
@@ -119,23 +122,28 @@ def insert(configuration_file):
         center = 125.444552873685 88.702693999897 0.0
         solution_method = stroh
 
-    
+    \b
     Notes
     -----
-    Currently, Lammps  dump and  data files  are supported.  Input dump  files must
-    contain the columns 'id',  'type', 'x', 'y', and 'z', in  this order. They must
-    contain a single snapshot. Data files  are currently read and written using the
-    Lammps Python API, i.e. Lammps is actually called.
+    Currently, Lammps dump and data files are supported. Input dump files must
+    contain the columns 'id', 'type', 'x', 'y', and 'z', in this order. They
+    must contain a single snapshot. Data files are currently read and written
+    using the Lammps Python API, i.e. Lammps is actually called.
     
 
+    \b
     References
     ----------
+    \b
     1. Stroh, A.N. J. Math. Phys., 41: 77 (1962)
 
+    \b
     2. Barnett, D.M.; Lothe, J. Phys. Norvegica, 7 (1973)
 
+    \b
     3. Hirth, J.P.; Lothe, J. Theory of Dislocations, 2nd Edition; John Wiley and Sons, 1982. pp 467
 
+    \b
     4. Bacon, D. J.; Barnett, D. M.; Scattergood, R. O. Progress in Materials Science 1978, 23, 51-262.
 
     """
@@ -329,4 +337,4 @@ def get_m_direction(xi):
 
 
 if __name__ == '__main__':
-    main()
+    insert()
