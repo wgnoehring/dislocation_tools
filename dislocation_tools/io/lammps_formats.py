@@ -145,9 +145,9 @@ def write_dump(outfile, header, atomdata):
         one row of data for each atom.
     """
     with open(outfile, 'wb') as file:
-        if (sys.version_info.major > 3):
+        if (sys.version_info.major >= 3):
             for line in header:
-                file.write(bytes(' '.join(line) + '\n', 'UTF-8'))
+                file.write(bytes(' '.join(line) + '\n', encoding='UTF-8'))
         else:
             for line in header:
                 file.write(bytes(' '.join(line) + '\n'))
