@@ -88,8 +88,8 @@ def calculate_displacements_with_symbolical_integrals(
     """
     print("Constructing angular function matrices")
     rotation_matrix = generate_symbolical_rotation_matrix(sp.Matrix(xi))
-    n_rot = rotation_matrix * n
-    m_rot = rotation_matrix * m
+    n_rot = rotation_matrix * sp.Matrix(n)
+    m_rot = rotation_matrix * sp.Matrix(m)
     # It would perhaps be useful to simplify the expressions,
     # e.g. via trigsimp. Currently, however, this introduces
     # numerical error.
@@ -365,16 +365,16 @@ def generate_symbolical_rotation_matrix(axis):
         for j in range(3):
             tensor_product[i, j] = axis[i] * axis[j]
     cross_product_matrix = sp.zeros(3)
-    cross_product_matrix[0, 1] = -1.0 * axis[2]
+    cross_product_matrix[0, 1] = sp.S(-1.0) * axis[2]
     cross_product_matrix[1, 0] = axis[2]
     cross_product_matrix[0, 2] = axis[1]
-    cross_product_matrix[2, 0] = -1.0 * axis[1]
-    cross_product_matrix[1, 2] = -1.0 * axis[0]
+    cross_product_matrix[2, 0] = sp.S(-1.0) * axis[1]
+    cross_product_matrix[1, 2] = sp.S(-1.0) * axis[0]
     cross_product_matrix[2, 1] = axis[0]
     rotation_matrix = (
         sp.cos(angle) * sp.eye(3) +
         sp.sin(angle) * cross_product_matrix +
-        (1.0 - sp.cos(angle)) * tensor_product
+        (sp.S(1.0) - sp.cos(angle)) * tensor_product
     )
     return rotation_matrix
 
