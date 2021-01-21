@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Functions for working with tensors"""
 import numpy as np
+import sympy as sp
 
 __author__ = "Wolfram Georg Nöhring"
 __copyright__ = """\
