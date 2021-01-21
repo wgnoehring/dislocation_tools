@@ -303,7 +303,7 @@ def insert(configuration_file):
             atomdata = np.append(
                 atomdata, np.zeros((atomdata.shape[0], 3), dtype=float), 1
             )
-            header[-1].append('ux uy uz')
+            header[-1].extend(['ux', 'uy', 'uz'])
             # Calculate the total displacements
             atomdata[:, -3::] = reference_coordinates - coordinates
         write_dump(outfile, header, atomdata)
